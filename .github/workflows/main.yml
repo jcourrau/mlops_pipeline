@@ -44,9 +44,9 @@ jobs:
           cat reports/metrics.txt >> report.md
           
           echo "## Data visualization" >> report.md
-          echo "![Feature importance](reports/feature_importance.png)" >> report.md
+          cml-publish feature_importance.png --md >> report.md
           
-          cml comment create --md report.md --publish
+          cml-send-comment report.md
 
   build_docker_image:
     needs: retraining_model
