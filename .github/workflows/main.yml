@@ -46,7 +46,7 @@ jobs:
           echo "## Data visualization" >> report.md
           echo "![Feature importance](reports/feature_importance.png)" >> report.md
           
-          cml comment create --md report.md
+          cml comment create --md report.md --publish
 
   build_docker_image:
     needs: retraining_model
