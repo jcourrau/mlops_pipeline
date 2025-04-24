@@ -1,0 +1,85 @@
+# .github/workflows/ci.yml
+
+name: CI model to Dockerhub
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  retraining_model:
+    runs-on: ubuntu-latest
+    container: docker://dvcorg/cml:latest
+    env:
+      repo_token: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Upgrade pip
+        run: pip install --upgrade pip
+
+      - name: Install requirements
+        run: pip3 install -r requirements.txt
+
+      #- name: Configure AWS credentials
+      #  uses: aws-actions/configure-aws-credentials@v2
+      #  with:
+      #    aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #    aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #    aws-region: us-east-2
+
+      # retraining.py should call your train.py and evaluate.py
+      - name: Execute the training pipeline
+        run: |
+          python3 -m src.train
+          python3 -m src.evaluate
+
+      - name: Generating report
+        run: |
+          echo "## Model metrics" > report.md
+          cat reports/metrics.txt >> report.md
+          
+          echo "## Data visualization" >> report.md
+          cml-publish reports/feature_importance.png --md >> report.md
+          
+          cml-send-comment report.md
+
+  build_docker_image:
+    needs: retraining_model
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build docker image
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/loan-app:v1 .
+
+      - name: Push to DockerHub
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/loan-app:v1
+
+      - name: Login into the server
+        run: echo '${{ secrets.DOCKER_PASSWORD }}' | docker login -u '${{ secrets.DOCKER_USERNAME }}' --password-stdin
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            docker login -u '${{ secrets.DOCKER_USERNAME }}' -p '${{ secrets.DOCKER_PASSWORD }}'
+            if docker ps --all | grep loan-app; then
+              docker stop loan-app
+              docker rm loan-app
+            fi
+            docker pull ${{ secrets.DOCKER_USERNAME }}/loan-app:v1
+            docker run -d --name loan-app -p 8501:8501 ${{ secrets.DOCKER_USERNAME }}/loan-app:v1
