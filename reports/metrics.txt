@@ -1,0 +1,2 @@
+Accuracy: 0.9299
+Error rate: 0.0701
