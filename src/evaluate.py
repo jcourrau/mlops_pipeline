@@ -1,13 +1,14 @@
 import os
 import joblib
 import pandas as pd
-from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
+
+from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
 # load the pipeline that includes preprocessing and the classifier
 root = os.path.dirname(os.path.dirname(__file__))
-pipeline  = joblib.load(f"{root}/models/loan_pipeline.pkl")
+pipeline = joblib.load(f"{root}/models/loan_pipeline.pkl")
 
 # load the raw dataset and drop any missing values
 df = pd.read_csv(f"{root}/data/loan_data.csv").dropna()
@@ -62,7 +63,7 @@ importance = pipeline.named_steps["classifier"].feature_importances_
 
 # plot and save feature importance
 plt.figure(figsize=(8, 6))
-plt.barh(feature_names, importance )
+plt.barh(feature_names, importance)
 plt.xlabel("Importance")
 plt.title("Feature Importance")
 plt.tight_layout()

@@ -111,9 +111,9 @@ with tabs[0]:
 
             # Display result prominently
             if status == "Approved":
-                st.success(f"Load Approved ✅")
+                st.success("Load Approved ✅")
             else:
-                st.error(f"Load Rejected ❌")
+                st.error("Load Rejected ❌")
 
     # Display prediction history table
     st.subheader("Prediction History")
