@@ -8,4 +8,4 @@ RUN pip install -r requirements.txt
 COPY . /app
 
 EXPOSE 443
-CMD CMD ["python","-m","streamlit","run","app.py","--server.port=8501","--server.address=0.0.0.0"]
+CMD ["python","-m","streamlit","run","app.py","--server.port=8501","--server.address=0.0.0.0"]
