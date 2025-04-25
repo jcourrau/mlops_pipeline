@@ -78,7 +78,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             sudo systemctl enable --now docker      # arranca Docker si no está corriendo
-            sudo  login -u '${{ secrets.DOCKER_USERNAME }}' -p '${{ secrets.DOCKER_PASSWORD }}'
+            sudo docker login -u '${{ secrets.DOCKER_USERNAME }}' -p '${{ secrets.DOCKER_PASSWORD }}'
             if sudo docker ps --all | grep loan-app; then
               sudo docker stop loan-app
               sudo docker rm loan-app
