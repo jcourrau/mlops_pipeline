@@ -42,10 +42,12 @@ jobs:
         run: |
           echo "## Model metrics" > report.md
           cat reports/metrics.txt >> report.md
+      
+          echo "## Data visualization" >> report.md
+          cml-publish reports/feature_importance.png --md >> report.md
           
-          cml comment --md -<<EOF >> report.md
-          ![feature_importance](reports/feature_importance.png)
-           EOF
+          cml cml-send-comment report.md
+
 
   build_docker_image:
     needs: retraining_model
@@ -82,4 +84,4 @@ jobs:
               sudo docker rm loan-app
             fi
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/loan-app:v1
-            sudo docker run -d --name loan-app -p 8000:8501 ${{ secrets.DOCKER_USERNAME }}/loan-app:v1
+            sudo docker run -d --name loan-app -p 443:8501 ${{ secrets.DOCKER_USERNAME }}/loan-app:v1
