@@ -7,5 +7,6 @@ RUN pip install -r requirements.txt
 
 COPY . /app
 
-EXPOSE 443
+EXPOSE 8501
+# arrancamos Streamlit en 0.0.0.0:8501
 CMD ["python","-m","streamlit","run","app.py","--server.port=8501","--server.address=0.0.0.0"]

@@ -84,4 +84,4 @@ jobs:
               sudo docker rm loan-app
             fi
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/loan-app:v1
-            sudo docker run -d --name loan-app -p 443:8501 ${{ secrets.DOCKER_USERNAME }}/loan-app:v1
+            sudo docker run -d --name loan-app -p 8501:8501 ${{ secrets.DOCKER_USERNAME }}/loan-app:v1
