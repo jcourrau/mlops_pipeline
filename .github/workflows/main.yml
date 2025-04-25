@@ -46,7 +46,13 @@ jobs:
           echo "## Data visualization" >> report.md
           cml-publish reports/feature_importance.png --md >> report.md
 
-          cml-send-comment report.md
+      - name: Publish CML report as comment
+        run: cml-send-comment report.md
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: cml-report
+          path: report.mdt.md
 
 
   build_docker_image:
