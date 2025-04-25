@@ -46,7 +46,7 @@ jobs:
           echo "## Data visualization" >> report.md
           cml-publish reports/feature_importance.png --md >> report.md
 
-          cml cml-send-comment report.md
+          cml-send-comment report.md
 
 
   build_docker_image:
