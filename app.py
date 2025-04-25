@@ -5,13 +5,17 @@ import joblib
 # Page configuration
 st.set_page_config(
     page_title="Loan Approval",
-    page_icon="assets/piggy-bank-32.png",
+    # page_icon="assets/piggy-bank-32.png",
     layout="wide"
 )
 
 # Load the trained prediction pipeline
 with st.spinner("Loading model, please wait…"):
-    pipeline = joblib.load("models/loan_pipeline.pkl")
+    @st.cache_resource
+    def load_pipeline():
+        return joblib.load("models/loan_pipeline.pkl")
+
+    pipeline = load_pipeline()
 
 # Initialize prediction history in session state
 if "history" not in st.session_state:
