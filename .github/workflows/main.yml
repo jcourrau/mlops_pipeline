@@ -45,7 +45,8 @@ jobs:
       
           echo "## Data visualization" >> report.md
           cml-publish reports/feature_importance.png --md >> report.md
-          
+
+      # Send
           cml cml-send-comment report.md
 
 
