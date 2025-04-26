@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import joblib
 import plotly.express as px
-import seaborn as sns
 
 # Page configuration
 st.set_page_config(
@@ -24,8 +23,14 @@ st.markdown("""
 with st.spinner("Loading model, please wait…"):
     @st.cache_resource
     def load_pipeline():
+        """
+        Load and cache the trained machine learning pipeline from disk.
+        The pipeline includes both preprocessing steps and the classifier.
+        
+        Returns:
+            sklearn.pipeline.Pipeline: Loaded pipeline object containing preprocessor and classifier
+        """
         return joblib.load("models/loan_pipeline.pkl")
-
 
     pipeline = load_pipeline()
 
@@ -35,7 +40,13 @@ if "history" not in st.session_state:
 
 # Define table columns for history
 history_columns = [
-    "Client ID", "Age", "Income", "Loan Amount", "Interest Rate", "Credit Score", "Result"
+    "Client ID", 
+    "Age", 
+    "Income",
+    "Loan Amount", 
+    "Interest Rate", 
+    "Credit Score",
+    "Result"
 ]
 
 # Create tabs for navigation
@@ -51,7 +62,11 @@ with tabs[0]:
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            client_id = st.text_input("Client ID (8 characters)", max_chars=8, value="20703025")
+            client_id = st.text_input(
+                "Client ID (8 characters)",
+                max_chars=8,
+                value="20703025"
+            )
             education = st.selectbox(
                 "Education Level", ["High School", "Bachelor", "Master", "PhD"]
             )
@@ -200,7 +215,10 @@ with tabs[1]:
         # Row 2: Full-width trend line (placeholder, update later)
         st.subheader("Approved vs Rejected Loans")
         st.text("by Credit Score Range")
-        history_df["Credit Bin"] = pd.cut(history_df["Credit Score"], bins=[300, 500, 650, 750, 850])
+        history_df["Credit Bin"] = pd.cut(
+            history_df["Credit Score"],
+            bins=[300, 500, 650, 750, 850]
+        )
         history_df["Credit Bin"] = history_df["Credit Bin"].astype(str)
         fig_stack = px.histogram(
             history_df,
