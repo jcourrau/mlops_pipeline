@@ -66,7 +66,10 @@ jobs:
 
       - name: Build docker image
         run: |
-          docker build --no-cache -t ${{ secrets.DOCKER_USERNAME }}/loan-app:${{ env.IMAGE_TAG }} .
+          docker build \
+          --build-arg GIT_COMMIT=${{ env.IMAGE_TAG }} \
+          --build-arg BUILD_TIME="$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+           --no-cache -t ${{ secrets.DOCKER_USERNAME }}/loan-app:${{ env.IMAGE_TAG }} .
           docker tag ${{ secrets.DOCKER_USERNAME }}/loan-app:${{ env.IMAGE_TAG }} ${{ secrets.DOCKER_USERNAME }}/loan-app:latest
 
       - name: Push to DockerHub

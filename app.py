@@ -1,7 +1,46 @@
+import datetime
+import platform
+import subprocess
+
 import streamlit as st
 import pandas as pd
 import joblib
 import plotly.express as px
+import os
+
+def get_debug_info():
+    """
+    Gather system and environment debug information.
+    
+    Collects various system metrics and information including:
+    - Git commit hash
+    - Build timestamp
+    - System hostname
+    - Platform details
+    - Python version
+    - Current server time
+    - Disk usage
+    - Available RAM
+    - Running Docker containers
+    
+    Returns:
+        pandas.DataFrame: Debug information with columns ['Metric', 'Value']
+    """
+
+    debug_data = {
+        "Git Commit SHA": os.getenv("GIT_COMMIT", "Unknown"),
+        "Build Time (UTC)": os.getenv("BUILD_TIME", "Unknown"),
+        "Hostname": platform.node(),
+        "Platform": platform.platform(),
+        "Python Version": platform.python_version(),
+        "Server Time (Local)": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "Disk Usage": subprocess.getoutput("df -h / | tail -1 | awk '{print $5}'"),
+        "RAM Free (MB)": subprocess.getoutput("free -m | awk '/Mem:/ {print $7}'"),
+        "Running Containers": subprocess.getoutput("docker ps --format '{{.Names}}'"),
+    }
+
+    df = pd.DataFrame(debug_data.items(), columns=["Metric", "Value"])
+    return df
 
 # Page configuration
 st.set_page_config(
@@ -250,3 +289,8 @@ with tabs[2]:
         "2. Fill in your loan details in the sidebar.\n"
         "3. Click **Predict** to see the result.\n"
     )
+
+    st.title("🔧 Debug Info")
+
+    debug_df = get_debug_info()
+    st.table(debug_df)
