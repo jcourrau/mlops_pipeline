@@ -1,79 +1,112 @@
 import streamlit as st
 import pandas as pd
 import joblib
+import plotly.express as px
+import seaborn as sns
 
 # Page configuration
 st.set_page_config(
-    page_title="Loan Approval",
-    page_icon="assets/piggy-bank-32.png",
+    page_title="Loan Predictor",
+    page_icon="assets/icon-32-white.png",
     layout="wide"
 )
 
+st.markdown("""
+    <style>
+    button[role="tablist"] {
+        font-size: 1.3rem !important;
+        font-weight: 600 !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # Load the trained prediction pipeline
 with st.spinner("Loading model, please wait…"):
-    pipeline = joblib.load("models/loan_pipeline.pkl")
+    @st.cache_resource
+    def load_pipeline():
+        return joblib.load("models/loan_pipeline.pkl")
 
-# Initialize prediction history in session state
+
+    pipeline = load_pipeline()
+
+# Initialize prediction history in the session state
 if "history" not in st.session_state:
     st.session_state.history = []
 
 # Define table columns for history
 history_columns = [
-    "Age", "Income", "Loan Amount", "Interest Rate", "Credit Score", "Result"
+    "Client ID", "Age", "Income", "Loan Amount", "Interest Rate", "Credit Score", "Result"
 ]
 
 # Create tabs for navigation
-tabs = st.tabs(["Predict", "About"])
+tabs = st.tabs(["Predict", "Dashboard", "About"])
 
 # Predict tab
 with tabs[0]:
     st.header("Loan Approval Predictor")
 
-    # Input form placed in the sidebar
-    with st.sidebar.form("loan_form", clear_on_submit=True):
+    with st.form("loan_form", clear_on_submit=True):
         st.subheader("Enter loan details:")
-        age = st.number_input("Age", min_value=18, max_value=100, value=30)
-        gender = st.selectbox(
-            "Gender", ["male", "female"], format_func=lambda x: x.title()
-        )
-        education = st.selectbox(
-            "Education Level", ["High School", "Bachelor", "Master", "PhD"]
-        )
-        income = st.number_input(
-            "Annual Income", min_value=0.0, value=50000.0, step=1000.0
-        )
-        emp_exp = st.number_input(
-            "Years of Employment", min_value=0, max_value=50, value=5
-        )
-        home = st.selectbox(
-            "Home Ownership", ["RENT", "OWN", "MORTGAGE", "OTHER"],
-            format_func=lambda x: x.title()
-        )
-        loan_amount = st.number_input(
-            "Loan Amount", min_value=0.0, value=10000.0, step=500.0
-        )
-        loan_intent = st.selectbox(
-            "Loan Purpose", [
-                "PERSONAL", "EDUCATION", "MEDICAL",
-                "VENTURE", "HOME_IMPROVEMENT", "DEBT_CONSOLIDATION"
-            ], format_func=lambda x: x.replace("_", " ").title()
-        )
-        interest_rate = st.number_input(
-            "Interest Rate (%)", min_value=0.0, max_value=100.0, value=10.0
-        )
-        percent_income = st.number_input(
-            "Loan as % of Income", min_value=0.0, max_value=200.0, value=20.0
-        )
-        credit_history = st.number_input(
-            "Credit History (years)", min_value=0.0, max_value=50.0, value=5.0
-        )
-        credit_score = st.number_input(
-            "Credit Score", min_value=300, max_value=850, value=650
-        )
-        previous_defaults = st.selectbox("Previous Defaults?", ["No", "Yes"])
-        submit = st.form_submit_button("Predict")
+        # Create two columns
+        col1, col2, col3 = st.columns(3)
 
+        with col1:
+            client_id = st.text_input("Client ID (8 characters)", max_chars=8, value="20703025")
+            education = st.selectbox(
+                "Education Level", ["High School", "Bachelor", "Master", "PhD"]
+            )
+            home = st.selectbox(
+                "Home Ownership", ["RENT", "OWN", "MORTGAGE", "OTHER"],
+                format_func=lambda x: x.title()
+            )
+            interest_rate = st.number_input(
+                "Interest Rate (%)", min_value=0.0, max_value=100.0, value=10.0
+            )
+            credit_score = st.number_input(
+                "Credit Score", min_value=300, max_value=850, value=650
+            )
+
+        with col2:
+            age = st.number_input("Age", min_value=18, max_value=100, value=30)
+            emp_exp = st.number_input(
+                "Years of Employment", min_value=0, max_value=50, value=5
+            )
+            loan_intent = st.selectbox(
+                "Loan Purpose", [
+                    "PERSONAL", "EDUCATION", "MEDICAL",
+                    "VENTURE", "HOME_IMPROVEMENT", "DEBT_CONSOLIDATION"
+                ], format_func=lambda x: x.replace("_", " ").title()
+            )
+            percent_income = st.number_input(
+                "Loan as % of Income", min_value=0.0, max_value=200.0, value=20.0
+            )
+            credit_history = st.number_input(
+                "Credit History (years)", min_value=0.0, max_value=50.0, value=5.0
+            )
+
+            # Predict Button
+            submit = st.form_submit_button("Predict", use_container_width=True)
+
+        with col3:
+            gender = st.selectbox(
+                "Gender", ["male", "female"], format_func=lambda x: x.title()
+            )
+            income = st.number_input(
+                "Annual Income", min_value=0.0, value=50000.0, step=1000.0
+            )
+            loan_amount = st.number_input(
+                "Loan Amount", min_value=0.0, value=10000.0, step=500.0
+            )
+            previous_defaults = st.selectbox("Previous Defaults?", ["No", "Yes"])
+
+    # Prediction result and history table on the right column
     if submit:
+        # Validate client ID
+        if not client_id.isdigit():
+            st.error("Client ID must contain only numbers.")
+        elif len(client_id) != 8:
+            st.error("Client ID must be exactly 8 digits long.")
+
         # Basic validation: income must cover the loan amount
         if income < loan_amount:
             st.error("Annual income must be at least the loan amount.")
@@ -101,6 +134,7 @@ with tabs[0]:
 
             # Append summary to history
             st.session_state.history.append({
+                "Client ID": client_id,
                 "Age": age,
                 "Income": income,
                 "Loan Amount": loan_amount,
@@ -109,22 +143,82 @@ with tabs[0]:
                 "Result": status
             })
 
-            # Display result prominently
+            # Display the result
             if status == "Approved":
-                st.success(f"Load Approved ✅")
+                st.success("Load Approved ✅")
             else:
-                st.error(f"Load Rejected ❌")
+                st.error("Load Rejected ❌")
 
-    # Display prediction history table
-    st.subheader("Prediction History")
     history_df = pd.DataFrame(
         st.session_state.history,
         columns=history_columns
     )
+
+    # Display prediction history table
+    st.subheader("Prediction History")
     st.dataframe(history_df)
 
-# About tab
+# Dashboard tab
 with tabs[1]:
+    st.header("Dashboards")
+
+    history_df = pd.DataFrame(
+        st.session_state.history,
+        columns=history_columns
+    )
+
+    if not history_df.empty:
+
+        col1, col2 = st.columns([1, 2])
+
+        with col1:
+            st.subheader("Approval Rate")
+            fig_pie = px.pie(
+                history_df,
+                names="Result",
+                hole=0.4,
+                template="plotly_white",
+                color_discrete_map={
+                    "Approved": "#2ECC71",
+                    "Rejected": "#E74C3C"
+                }
+            )
+            st.plotly_chart(fig_pie, use_container_width=True)
+
+        with col2:
+            st.subheader("Loan Distribution")
+            st.text("Income vs Loan Amount")
+            fig = px.scatter(
+                history_df,
+                x="Income",
+                y="Loan Amount",
+                color="Result",
+                template="plotly_white"
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+        # Row 2: Full-width trend line (placeholder, update later)
+        st.subheader("Approved vs Rejected Loans")
+        st.text("by Credit Score Range")
+        history_df["Credit Bin"] = pd.cut(history_df["Credit Score"], bins=[300, 500, 650, 750, 850])
+        history_df["Credit Bin"] = history_df["Credit Bin"].astype(str)
+        fig_stack = px.histogram(
+            history_df,
+            x="Credit Bin",
+            color="Result",
+            barmode="stack",
+            template="plotly_white"
+        )
+        st.plotly_chart(fig_stack, use_container_width=True)
+
+        # Final row: full-width table
+        st.subheader("Prediction History")
+        st.dataframe(history_df)
+    else:
+        st.info("Generate some predictions first to see the dashboards.")
+
+# About tab
+with tabs[2]:
     st.header("About")
     st.markdown(
         "Loan Approval Predictor is a tool created by Jason Courrau. "
