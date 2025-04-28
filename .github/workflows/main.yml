@@ -48,12 +48,15 @@ jobs:
 
           cml-send-comment report.md
 
-
   build_docker_image:
     needs: retraining_model
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
+      - name: Set up Docker image tag
+        id: vars
+        run: echo "IMAGE_TAG=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
 
       - name: Login to DockerHub
         uses: docker/login-action@v2
@@ -62,10 +65,17 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build docker image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/loan-app:v1 .
+        run: |
+          docker build \
+          --build-arg GIT_COMMIT=${{ env.IMAGE_TAG }} \
+          --build-arg BUILD_TIME="$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+           --no-cache -t ${{ secrets.DOCKER_USERNAME }}/loan-app:${{ env.IMAGE_TAG }} .
+          docker tag ${{ secrets.DOCKER_USERNAME }}/loan-app:${{ env.IMAGE_TAG }} ${{ secrets.DOCKER_USERNAME }}/loan-app:latest
 
       - name: Push to DockerHub
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/loan-app:v1
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/loan-app:${{ env.IMAGE_TAG }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/loan-app:latest
 
       - name: Login into the server
         run: echo '${{ secrets.DOCKER_PASSWORD }}' | docker login -u '${{ secrets.DOCKER_USERNAME }}' --password-stdin
@@ -83,5 +93,45 @@ jobs:
               sudo docker stop loan-app
               sudo docker rm loan-app
             fi
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/loan-app:v1
-            sudo docker run -d --name loan-app -p 8501:8501 ${{ secrets.DOCKER_USERNAME }}/loan-app:v1
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/loan-app:${{ env.IMAGE_TAG }}
+            sudo docker run -d --name loan-app -p 8501:8501 ${{ secrets.DOCKER_USERNAME }}/loan-app:${{ env.IMAGE_TAG }}
+            sudo docker system prune -af --volumes
+            
+
+  update_Nginx_config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check if Nginx config changed
+        id: check_changes
+        run: |
+          git fetch origin develop
+          if git diff --name-only origin/develop | grep -q 'mlops.cent-0.com.conf'; then
+            echo "changed=true" >> $GITHUB_ENV
+          else
+            echo "changed=false" >> $GITHUB_ENV
+          fi
+
+      - name: Upload Nginx config file
+        if: env.changed == 'true'
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "mlops.cent-0.com.conf"
+          target: "/home/ec2-user/mlops.cent-0.com.conf"
+
+      - name: Move and apply Nginx config
+        if: env.changed == 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            sudo mv /home/ec2-user/mlops.cent-0.com.conf /etc/nginx/conf.d/mlops.cent-o.com.conf
+            sudo nginx -t
+            sudo systemctl reload nginx
+
