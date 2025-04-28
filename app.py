@@ -1,8 +1,46 @@
+import datetime
+import platform
+import subprocess
+
 import streamlit as st
 import pandas as pd
 import joblib
 import plotly.express as px
-import seaborn as sns
+import os
+
+def get_debug_info():
+    """
+    Gather system and environment debug information.
+    
+    Collects various system metrics and information including:
+    - Git commit hash
+    - Build timestamp
+    - System hostname
+    - Platform details
+    - Python version
+    - Current server time
+    - Disk usage
+    - Available RAM
+    - Running Docker containers
+    
+    Returns:
+        pandas.DataFrame: Debug information with columns ['Metric', 'Value']
+    """
+
+    debug_data = {
+        "Git Commit SHA": os.getenv("GIT_COMMIT", "Unknown"),
+        "Build Time (UTC)": os.getenv("BUILD_TIME", "Unknown"),
+        "Hostname": platform.node(),
+        "Platform": platform.platform(),
+        "Python Version": platform.python_version(),
+        "Server Time (Local)": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "Disk Usage": subprocess.getoutput("df -h / | tail -1 | awk '{print $5}'"),
+        "RAM Free (MB)": subprocess.getoutput("free -m | awk '/Mem:/ {print $7}'"),
+        "Running Containers": subprocess.getoutput("docker ps --format '{{.Names}}'"),
+    }
+
+    df = pd.DataFrame(debug_data.items(), columns=["Metric", "Value"])
+    return df
 
 # Page configuration
 st.set_page_config(
@@ -24,8 +62,14 @@ st.markdown("""
 with st.spinner("Loading model, please wait…"):
     @st.cache_resource
     def load_pipeline():
+        """
+        Load and cache the trained machine learning pipeline from disk.
+        The pipeline includes both preprocessing steps and the classifier.
+        
+        Returns:
+            sklearn.pipeline.Pipeline: Loaded pipeline object containing preprocessor and classifier
+        """
         return joblib.load("models/loan_pipeline.pkl")
-
 
     pipeline = load_pipeline()
 
@@ -35,7 +79,13 @@ if "history" not in st.session_state:
 
 # Define table columns for history
 history_columns = [
-    "Client ID", "Age", "Income", "Loan Amount", "Interest Rate", "Credit Score", "Result"
+    "Client ID", 
+    "Age", 
+    "Income",
+    "Loan Amount", 
+    "Interest Rate", 
+    "Credit Score",
+    "Result"
 ]
 
 # Create tabs for navigation
@@ -51,7 +101,11 @@ with tabs[0]:
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            client_id = st.text_input("Client ID (8 characters)", max_chars=8, value="20703025")
+            client_id = st.text_input(
+                "Client ID (8 characters)",
+                max_chars=8,
+                value="20703025"
+            )
             education = st.selectbox(
                 "Education Level", ["High School", "Bachelor", "Master", "PhD"]
             )
@@ -200,7 +254,10 @@ with tabs[1]:
         # Row 2: Full-width trend line (placeholder, update later)
         st.subheader("Approved vs Rejected Loans")
         st.text("by Credit Score Range")
-        history_df["Credit Bin"] = pd.cut(history_df["Credit Score"], bins=[300, 500, 650, 750, 850])
+        history_df["Credit Bin"] = pd.cut(
+            history_df["Credit Score"],
+            bins=[300, 500, 650, 750, 850]
+        )
         history_df["Credit Bin"] = history_df["Credit Bin"].astype(str)
         fig_stack = px.histogram(
             history_df,
@@ -232,3 +289,8 @@ with tabs[2]:
         "2. Fill in your loan details in the sidebar.\n"
         "3. Click **Predict** to see the result.\n"
     )
+
+    st.title("🔧 Debug Info")
+
+    debug_df = get_debug_info()
+    st.table(debug_df)
