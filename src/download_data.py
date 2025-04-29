@@ -42,12 +42,12 @@ def download_from_s3(
     print("Data download complete.")
 
 if __name__ == "__main__":
+    # Download the data from S3
     download_from_s3(
         bucket_name="jason-mlops",
-        s3_prefix="ETL-data",
+        s3_prefix="ETL_data",
         local_dir="./data/"
     )
-
 
 
 
