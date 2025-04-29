@@ -199,9 +199,9 @@ with tabs[0]:
 
             # Display the result
             if status == "Approved":
-                st.success("Load Approved ✅")
+                st.success("Loan Approved ✅")
             else:
-                st.error("Load Rejected ❌")
+                st.error("Loan Rejected ❌")
 
     history_df = pd.DataFrame(
         st.session_state.history,
