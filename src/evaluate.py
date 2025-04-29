@@ -54,7 +54,7 @@ os.makedirs(f"{root}/reports", exist_ok=True)
 # save metrics to a text file
 metrics_path = f"{root}/reports/metrics.txt"
 with open(metrics_path, "w") as f:
-    f.write(f"Accuracy: {acc:.4f}\nError rate: {err_rate:.4f}\n")
+    f.write(f"Accuracy: {acc*100:.4f}\nError rate: {err_rate*100:.4f}\n")
 
 # extract feature names from the preprocessor and classifier
 preprocessor = pipeline.named_steps["preprocessor"]
