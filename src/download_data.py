@@ -39,7 +39,14 @@ def download_from_s3(
             print(f"Error downloading {obj.key}: {str(e)}")
             continue
 
-    print("Data download complete.")
+    print("All Data download complete.")
+
+    # After downloading
+    expected_file = os.path.join(local_dir, 'loan_data.csv')
+    if not os.path.exists(expected_file):
+        raise FileNotFoundError(f"Expected dataset {expected_file} not found after download.")
+    else:
+        print(f"Dataset {expected_file} downloaded successfully.")
 
 if __name__ == "__main__":
     # Download the data from S3

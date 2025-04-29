@@ -10,13 +10,14 @@ from sklearn.model_selection import train_test_split
 
 root = os.path.dirname(os.path.dirname(__file__))
 
-if not os.path.exists(f"{root}/data/loan_data.csv"):
+if not os.path.exists(f"./data/loan_data.csv"):
     raise FileNotFoundError("Dataset loan_data.csv not found. "
                             "Make sure you download it before training.")
 
 # Load the data and remove any missing values
-print(f"Reading data on {root}...")
-df = pd.read_csv(f"{root}/data/loan_data.csv").dropna()
+print(f"Reading data on:"
+      f"\n{root}/data/")
+df = pd.read_csv(f"./data/loan_data.csv").dropna()
 
 # Specify which columns are numeric and which are categorical
 numeric_features = [
@@ -59,7 +60,8 @@ X_train, X_test, y_train, y_test = train_test_split(
 # Train the pipeline and save it to disk
 print("Training the pipeline...")
 pipeline.fit(X_train, y_train)
-os.makedirs(f"{root}/models", exist_ok=True)
-joblib.dump(pipeline, f"{root}/models/loan_pipeline.pkl")
+os.makedirs(f"./models", exist_ok=True)
+joblib.dump(pipeline, f"./models/loan_pipeline.pkl")
 
-print("Pipeline has been saved to models/loan_pipeline.pkl")
+print(f"Pipeline has been saved to:"
+      f"\n{root}/models/loan_pipeline.pkl")
