@@ -1,2 +1,0 @@
-['remote "versioning"']
-    url = s3://mlops-desarrollo-en-clase/versioning/
