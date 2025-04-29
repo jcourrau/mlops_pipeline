@@ -1,0 +1,3 @@
+['remote "data-versioning"']
+    url = s3://jason-mlops/data-versioning/
+    region = us-east-2
