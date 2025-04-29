@@ -30,7 +30,16 @@ jobs:
 
       - name: Download data from S3
         run: python3 src/download_data.py
-          
+
+      - name: Check if loan_data.csv exists
+        run: |
+          if [ -f "./data/loan_data.csv" ]; then
+            echo "Data file exists"
+          else
+            echo "Data file missing"
+            exit 1
+          fi
+
       - name: Configure remote DVC
         run: |
           dvc remote add -f data-versioning s3://jason-mlops/data-versioning/

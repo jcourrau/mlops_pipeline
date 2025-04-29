@@ -10,8 +10,12 @@ from sklearn.model_selection import train_test_split
 
 root = os.path.dirname(os.path.dirname(__file__))
 
+if not os.path.exists(f"{root}/data/loan_data.csv"):
+    raise FileNotFoundError("Dataset loan_data.csv not found. "
+                            "Make sure you download it before training.")
+
 # Load the data and remove any missing values
-print("Reading data...")
+print(f"Reading data on {root}...")
 df = pd.read_csv(f"{root}/data/loan_data.csv").dropna()
 
 # Specify which columns are numeric and which are categorical
