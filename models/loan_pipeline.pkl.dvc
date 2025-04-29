@@ -1,0 +1,5 @@
+outs:
+- md5: bd34d3c53286eb3de969062adc800f5a
+  size: 43810690
+  hash: md5
+  path: loan_pipeline.pkl
