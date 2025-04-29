@@ -16,6 +16,9 @@ jobs:
     container: docker://dvcorg/cml:latest
     env:
       repo_token: ${{ secrets.GH_TOKEN }}
+      AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+      AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+      AWS_DEFAULT_REGION: us-east-2
     steps:
       - uses: actions/checkout@v4
 
@@ -25,12 +28,21 @@ jobs:
       - name: Install requirements
         run: pip3 install -r requirements.txt
 
-      #- name: Configure AWS credentials
-      #  uses: aws-actions/configure-aws-credentials@v2
-      #  with:
-      #    aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      #    aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      #    aws-region: us-east-2
+      - name: Download data from S3
+        run: python3 src/download_data.py
+          
+      - name: Configure remote DVC
+        run: |
+          dvc remote add -f data-versioning s3://jason-mlops/data-versioning/
+          dvc remote modify data-versioning region us-east-2
+          
+          dvc remote add -f model-versioning s3://jason-mlops/model-versioning/
+          dvc remote modify model-versioning region us-east-2
+
+      # Access for dvc to local repo
+      - name: Make repo as safe
+        run: |
+          git config --global --add safe.directory /__w/mlops_pipeline/mlops_pipeline
 
       # retraining.py should call your train.py and evaluate.py
       - name: Execute the training pipeline
@@ -47,6 +59,28 @@ jobs:
           cml-publish reports/feature_importance.png --md >> report.md
 
           cml-send-comment report.md
+
+      - name: Track dataset with DVC
+        run: |
+          VERSION=$(git tag | grep ^v | sort -V | tail -n 1 | sed 's/v//' || echo "0" )
+          NEXT_VERSION=$((VERSION +1))
+          
+          dvc add data/loan_data.csv
+          dvc add models/loan_pipeline.pkl
+          
+          git config --global user.email "jasoncourrau@gmail.com"
+          git config --global user.name "Jason"
+          
+          git add data/loan_data.csv.dvc .gitignore
+          git add models/loan_pipeline.pkl.dvc .gitignore
+          
+          
+          git commit -m "Auto-track dataset via DVC - Version v$NEXT_VERSION"
+
+      - name: Push dataset to S3 via DVC
+        run: |
+          dvc push -r data-versioning
+          dvc push -r model-versioning
 
   build_docker_image:
     needs: retraining_model
