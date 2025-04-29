@@ -1,0 +1,8 @@
+[core]
+    remote = data-versioning
+['remote "data-versioning"']
+    url = s3://jason-mlops/data-versioning/
+    region = us-east-2
+['remote "model-remote"']
+    url = s3://jason-mlops/model-versioning/
+    region = us-east-2
