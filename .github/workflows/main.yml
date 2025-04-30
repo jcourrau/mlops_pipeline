@@ -56,8 +56,13 @@ jobs:
       # retraining.py should call your train.py and evaluate.py
       - name: Execute the training pipeline
         run: |
-          python3 -m src.train
-          python3 -m src.evaluate
+          python3 -m src/train
+          python3 -m src/evaluate
+
+      - name: List models folder
+        run: |
+          echo ">> Listing files in $(pwd)/models"
+          ls -R models || echo "models folder doesnt exist."
 
       - name: Generating report
         run: |
