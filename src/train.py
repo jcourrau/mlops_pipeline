@@ -1,12 +1,15 @@
 import os
 import pandas as pd
 import joblib
+import sklearn
 
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
+
+print(sklearn.__version__)
 
 # print("▶ Working dir:", os.getcwd())
 # print("▶ Files here:", os.listdir(os.getcwd()))
