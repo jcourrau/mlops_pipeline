@@ -8,12 +8,11 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 
-import os
-print("▶ Working dir:", os.getcwd())
-print("▶ Files here:", os.listdir(os.getcwd()))
+# print("▶ Working dir:", os.getcwd())
+# print("▶ Files here:", os.listdir(os.getcwd()))
 root = os.path.dirname(os.path.dirname(__file__))
-print("▶ Computed root:", root)
-print("▶ Files in root/data:", os.listdir(os.path.join(root, "data")))
+# print("▶ Computed root:", root)
+# print("▶ Files in root/data:", os.listdir(os.path.join(root, "data")))
 
 if not os.path.exists(f"./data/loan_data.csv"):
     raise FileNotFoundError("Dataset loan_data.csv not found. "
@@ -71,4 +70,4 @@ joblib.dump(pipeline, f"{root}/models/loan_pipeline.pkl")
 print(f"Pipeline has been saved to:"
       f"\n{root}/models/loan_pipeline.pkl")
 
-print("▶ Files en models/:", os.listdir(os.path.join(root, "models")))
+# print("▶ Files en models/:", os.listdir(os.path.join(root, "models")))

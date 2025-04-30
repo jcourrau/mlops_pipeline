@@ -31,15 +31,6 @@ jobs:
       - name: Download data from S3
         run: python3 src/download_data.py
 
-      - name: Check if loan_data.csv exists
-        run: |
-          if [ -f "./data/loan_data.csv" ]; then
-            echo "Data file exists"
-          else
-            echo "Data file missing"
-            exit 1
-          fi
-
       - name: Configure remote DVC
         run: |
           dvc remote add -f data-versioning s3://jason-mlops/data-versioning/
@@ -58,11 +49,6 @@ jobs:
         run: |
           python3 -m src.train
           python3 -m src.evaluate
-
-      - name: List models folder
-        run: |
-          echo ">> Listing files in $(pwd)/models"
-          ls -R models || echo "models folder doesnt exist."
 
       - name: Generating report
         run: |
@@ -147,7 +133,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            sudo systemctl enable --now docker      # arranca Docker si no está corriendo
+            sudo systemctl enable --now docker    
             sudo docker login -u '${{ secrets.DOCKER_USERNAME }}' -p '${{ secrets.DOCKER_PASSWORD }}'
             if sudo docker ps --all | grep loan-app; then
               sudo docker stop loan-app
