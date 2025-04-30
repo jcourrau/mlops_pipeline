@@ -13,37 +13,56 @@ on:
 jobs:
   retraining_model:
     runs-on: ubuntu-latest
+    container: docker://dvcorg/cml:latest
     env:
       repo_token: ${{ secrets.GH_TOKEN }}
       AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
       AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
       AWS_DEFAULT_REGION: us-east-2
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - name: Upgrade pip & install dependencies
-        run: |
-          pip install --upgrade pip
-          pip3 install -r requirements.txt
+      - name: Upgrade pip
+        run: pip install --upgrade pip
+
+      - name: Install requirements
+        run: pip3 install -r requirements.txt
 
       - name: Download data from S3
         run: python3 src/download_data.py
 
-      - name: Configure DVC remotes
+      - name: Check if loan_data.csv exists
+        run: |
+          if [ -f "./data/loan_data.csv" ]; then
+            echo "Data file exists"
+          else
+            echo "Data file missing"
+            exit 1
+          fi
+
+      - name: Configure remote DVC
         run: |
           dvc remote add -f data-versioning s3://jason-mlops/data-versioning/
           dvc remote modify data-versioning region us-east-2
+          
           dvc remote add -f model-versioning s3://jason-mlops/model-versioning/
           dvc remote modify model-versioning region us-east-2
 
-      - name: Make repo as safe for DVC
+      # Access for dvc to local repo
+      - name: Make repo as safe
         run: |
-          git config --global --add safe.directory ${{ github.workspace }}
+          git config --global --add safe.directory /__w/mlops_pipeline/mlops_pipeline
 
+      # retraining.py should call your train.py and evaluate.py
       - name: Execute the training pipeline
         run: |
-          python3 -m src.train
-          python3 -m src.evaluate
+          python3 -m src/train
+          python3 -m src/evaluate
+
+      - name: List models folder
+        run: |
+          echo ">> Listing files in $(pwd)/models"
+          ls -R models || echo "models folder doesnt exist."
 
       - name: Generating report
         run: |
@@ -72,28 +91,28 @@ jobs:
           
           git commit -m "Auto-track dataset via DVC - Version v$NEXT_VERSION"
 
-      - name: Push dataset and model to S3 via DVC
+      - name: Push dataset to S3 via DVC
         run: |
           dvc push -r data-versioning
           dvc push -r model-versioning
 
-      - name: Upload model artifact for downstream jobs
-        uses: actions/upload-artifact@v3
+      - name: Upload model artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: loan-model
+          name: model-pkl
           path: models/loan_pipeline.pkl
 
   build_docker_image:
     needs: retraining_model
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v2
 
       - name: Download model artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: loan-model
-          path: models
+          name: model-pkl
+          path: models/
 
       - name: Set up Docker image tag
         id: vars
@@ -175,4 +194,3 @@ jobs:
             sudo mv /home/ec2-user/mlops.cent-0.com.conf /etc/nginx/conf.d/mlops.cent-o.com.conf
             sudo nginx -t
             sudo systemctl reload nginx
-
