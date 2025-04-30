@@ -13,7 +13,6 @@ on:
 jobs:
   retraining_model:
     runs-on: ubuntu-latest
-    container: docker://dvcorg/cml:latest
     env:
       repo_token: ${{ secrets.GH_TOKEN }}
       AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
@@ -22,25 +21,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Upgrade pip
-        run: pip install --upgrade pip
-
-      - name: Install requirements
-        run: pip3 install -r requirements.txt
+      - name: Upgrade pip & install dependencies
+        run: |
+          pip install --upgrade pip
+          pip3 install -r requirements.txt
 
       - name: Download data from S3
         run: python3 src/download_data.py
 
-      - name: Configure remote DVC
+      - name: Configure DVC remotes
         run: |
           dvc remote add -f data-versioning s3://jason-mlops/data-versioning/
           dvc remote modify data-versioning region us-east-2
-          
           dvc remote add -f model-versioning s3://jason-mlops/model-versioning/
           dvc remote modify model-versioning region us-east-2
 
-      # Access for dvc to local repo
-      - name: Make repo as safe
+      - name: Make repo as safe for DVC
         run: |
           git config --global --add safe.directory /__w/mlops_pipeline/mlops_pipeline
 
