@@ -38,7 +38,7 @@ jobs:
 
       - name: Make repo as safe for DVC
         run: |
-          git config --global --add safe.directory /__w/mlops_pipeline/mlops_pipeline
+          git config --global --add safe.directory ${{ github.workspace }}
 
       - name: Execute the training pipeline
         run: |
