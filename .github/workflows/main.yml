@@ -81,35 +81,17 @@ jobs:
           dvc push -r data-versioning
           dvc push -r model-versioning
 
-  pull_model:
-    runs-on: ubuntu-latest
-    needs: retraining_model
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Pull model via DVC in CML container
-      run: |
-        docker run --rm \
-          -v "${{ github.workspace }}:${{ github.workspace }}" \
-          -w "${{ github.workspace }}" \
-          dvcorg/cml:latest \
-          sh -c "
-            dvc remote add -f model-versioning s3://jason-mlops/model-versioning/ &&
-            dvc remote modify model-versioning region us-east-2 &&
-            dvc pull -r model-versioning models/loan_pipeline.pkl
-          "
-
-    - name: Upload model artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: loan-model
-        path: models/loan_pipeline.pkl
+      - name: Upload model artifact for downstream jobs
+        uses: actions/upload-artifact@v3
+        with:
+          name: loan-model
+          path: models/loan_pipeline.pkl
 
   build_docker_image:
-    needs: pull_model
+    needs: retraining_model
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Download model artifact
         uses: actions/download-artifact@v3
