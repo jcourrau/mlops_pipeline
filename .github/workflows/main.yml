@@ -78,7 +78,7 @@ jobs:
           dvc push -r model-versioning
 
       - name: Upload model artifact for downstream jobs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3.1.2
         with:
           name: loan-model
           path: models/loan_pipeline.pkl
