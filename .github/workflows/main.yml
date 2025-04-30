@@ -29,7 +29,7 @@ jobs:
         run: pip3 install -r requirements.txt
 
       - name: Download data from S3
-        run: python3 -m src.download_data.py
+        run: python3 -m src/download_data.py
 
       - name: Check if loan_data.csv exists
         run: |
